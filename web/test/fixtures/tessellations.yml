@@ -1,0 +1,11 @@
+bracket_default:
+  part: bracket
+  rel_deflection: 0.01
+  linear_deflection: 0.0093
+  angular_deflection: 0.1
+  triangle_count: 12
+  face_count: 2
+  bbox: { min: [0, 0, 0], max: [0.01, 0.01, 0.01] }
+  face_map: { primitives: [{ indices_accessor: 2, triangle_count: 12, faces: [{ id: 0, first: 0, count: 6 }, { id: 1, first: 6, count: 6 }] }] }
+  timings: { read: 1.0, mesh: 1.0, export: 1.0, total: 3.0 }
+  occt_version: "7.6.3"

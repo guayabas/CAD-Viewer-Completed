@@ -1,0 +1,22 @@
+# C++ build
+tessellator/build/
+tessellator/*.glb
+# Editor: keep shared project settings, ignore the rest
+.vscode/*
+!.vscode/settings.json
+!.vscode/c_cpp_properties.json
+# Files Windows adds when you copy into WSL
+*:Zone.Identifier
+# OS
+.DS_Store
+Thumbs.db
+# Private notes (not committed)
+CLAUDE.local.md
+HANDOFF.md
+# Data: ignore samples except the small test file used by the job tests
+samples/*
+!samples/README.md
+!samples/nist_ctc_01_asme1_ap242-e1.stp
+# Viewer
+viewer/public/*.glb
+!viewer/public/nist_ctc_01_asme1_ap242-e1.glb

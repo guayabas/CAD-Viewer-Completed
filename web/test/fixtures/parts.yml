@@ -1,0 +1,12 @@
+# Sample rows loaded into the test database before each test.
+# Fixtures skip validations, so these parts have no attached source file.
+
+bracket:
+  name: bracket
+  file_format: step
+  status: ready
+
+queued:
+  name: queued
+  file_format: step
+  status: pending
