@@ -40,7 +40,8 @@ viewer loads glb_url and the face map
 
 **One viewer, two modes.** Without `VITE_API_URL` the viewer is a static **demo** for viewing (GitHub Pages): it opens the bundled NIST part, local `.glb` files, and local STEP files meshed in the browser by [occt-import-js](https://github.com/kovacsv/occt-import-js) (OCCT compiled to WebAssembly, run in a Web Worker so the page stays responsive). With `VITE_API_URL` it is **connected**, for saving: parts list, upload with progress (button or drag and drop), status polling, and the GLB loaded from Rails. Both paths produce the same face map shape (`{id, first, count}` per face), so the viewer treats them alike.
 
-## Data model
+<details>
+<summary><b>Data model: parts vs tessellations, statuses, face IDs, and why</b></summary>
 
 ```
 parts                              tessellations
@@ -69,7 +70,10 @@ Decisions:
 - **Settings and versions are stored with the mesh** (`rel_deflection`, the resulting `linear_deflection`, `occt_version`), so any mesh can be reproduced and compared.
 - **Files live in Active Storage**, not in Postgres: the database stays small, and in production the GLB is served from a short-lived signed storage URL instead of being streamed through Rails.
 
-## Tessellation
+</details>
+
+<details>
+<summary><b>Tessellation: deflection, normals, units, face map</b></summary>
 
 - **Reading:** `STEPCAFControl_Reader` into an XCAF document, keeping names, colors and the assembly.
 - **Deflection is relative to the model's size.** Linear deflection = `rel_deflection` × the bounding-box diagonal (default 1%), angular = 0.1 rad. A fixed value in mm would be too coarse for a 10 mm screw and far too fine for a 2 m frame.
@@ -78,7 +82,10 @@ Decisions:
 - **Face map by construction.** `FaceMapWriter` subclasses `RWGltf_CafWriter` and overrides `saveIndices`, which the writer calls once per face while it appends that face's triangles. The map comes from the same loop that writes the GLB, so it can't fall out of sync with it.
 - **One primitive per part** (`SetMergeFaces`): one draw call per part instead of one per face; the face map keeps the per-face information.
 
-## Running locally
+</details>
+
+<details>
+<summary><b>Running locally and tests</b></summary>
 
 Ubuntu 24.04 (or WSL). Needs OCCT 7.6, Ruby 3.4, Postgres and Node LTS.
 
@@ -106,7 +113,10 @@ VITE_API_URL=http://localhost:3000 npm run dev   # connected mode
 
 **Tests:** `bin/rails test` in `web/` covers the models and upload limits, the CLI wrapper (fake shell-script binaries for errors and timeouts), the job (the real tessellator on the NIST sample) and the API. CI (`.github/workflows/ci.yml`) builds the tessellator on Ubuntu 24.04 and runs those tests against Postgres, plus RuboCop, Brakeman, and the viewer's lint and build.
 
-## Deploy
+</details>
+
+<details>
+<summary><b>Deploy: Render, Neon, Backblaze B2, free-tier limits</b></summary>
 
 | Piece | Where | Why |
 |---|---|---|
@@ -123,16 +133,24 @@ VITE_API_URL=http://localhost:3000 npm run dev   # connected mode
 
 Environment variables on Render: `RAILS_MASTER_KEY`, `DATABASE_URL` (Neon, direct connection), `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`. Optional: `STORAGE_QUOTA_MB`, `DAILY_UPLOAD_LIMIT`, `TESSELLATOR_TIMEOUT`, `TESSELLATOR_REL_DEFLECTION`, `TESSELLATOR_ANGULAR_DEFLECTION`. The B2 bucket needs a CORS rule allowing GET from the app's URL, because the GLB is downloaded straight from B2.
 
-## Next
+</details>
+
+<details>
+<summary><b>Next steps</b></summary>
 
 - **Face picking:** raycast → triangle index → binary search in the face map → highlight the B-rep face's triangles.
 - **B-rep edges as lines:** export each edge's polyline (`BRep_Tool::PolygonOnTriangulation`) next to the GLB and draw it with `LineSegments`.
 - **`inspection_regions`:** save picked faces with a label (defect type, inspection zone) per part.
 - **More formats and quality levels:** IGES and BREP readers; a coarse and a fine tessellation per part.
 
-## Credits
+</details>
+
+<details>
+<summary><b>Credits and licenses</b></summary>
 
 - [Open CASCADE Technology](https://dev.opencascade.org/) (LGPL-2.1 with an exception) for reading, meshing and glTF export.
 - [occt-import-js](https://github.com/kovacsv/occt-import-js) by Viktor Kovacs (LGPL-2.1), OCCT compiled to WebAssembly, loaded unmodified for in-browser meshing.
 - NIST CTC 01 test model from the NIST MBE PMI Validation and Conformance Testing project (public domain in the US); see `samples/README.md`.
 - [three.js](https://threejs.org/), [React Three Fiber](https://r3f.docs.pmnd.rs/) and [drei](https://github.com/pmndrs/drei) (MIT).
+
+</details>
