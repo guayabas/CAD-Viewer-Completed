@@ -36,7 +36,7 @@ All three pieces are connected: the viewer uploads to Rails, Rails runs the tess
   - Tests: `bin/rails test` (models, the CLI wrapper with fake shell-script binaries for errors/timeouts, the job with the real binary and the committed sample, the API). The real-binary tests skip if the tessellator isn't built. Also `bin/rubocop` and `bin/brakeman`.
 - **samples/**: test CAD files (e.g. NIST CTC 01 `nist_ctc_01_asme1_ap242-e1.stp`). Git-ignored.
 
-## Data model (will be defended in the README)
+## Data model (defended in the README)
 
 - **parts** (exists): `name`, `file_format` (`step`/`iges`/`brep`), `status` enum (pending 0 → processing 1 → ready 2 / failed 3, indexed), `error_message`, `has_one_attached :source_file`.
 - **tessellations** (exists): belongs_to part (indexed, foreign key); `has_one_attached :glb`, `rel_deflection`, `linear_deflection` (m), `angular_deflection` (rad), `triangle_count`, `face_count`, `bbox` (jsonb), `face_map` (jsonb), `timings` (jsonb), `occt_version`. All `null: false` except `occt_version`. `Part#latest_tessellation` is the newest one.
@@ -53,7 +53,7 @@ All three pieces are connected: the viewer uploads to Rails, Rails runs the tess
 5. [~] Viewer: open a GLB, orbit controls, zoom-to-fit, wireframe/shaded toggle, headlight, connected mode (parts list, upload, polling, load from Rails). **Next:** B-rep edges as lines, face picking with the face map.
 6. [x] Open a local STEP file in the browser without the server (occt-import-js in a Web Worker), plus drag and drop.
 7. [x] GitHub Pages (live, confirmed by the user): `.github/workflows/pages.yml` builds `viewer/` in demo mode with `VITE_BASE=/<repo>/` (`vite.config.ts` reads it) and deploys with `actions/deploy-pages`. Repo: `git@github.com:guayabas/CAD-Viewer-Completed.git`, site https://guayabas.github.io/CAD-Viewer-Completed/. Needs Settings → Pages → Source: GitHub Actions.
-8. [~] Docker + Render: done and tested in production mode locally (no Docker in WSL yet); waiting for the Neon, Backblaze B2 and Render accounts. Storage is B2, not R2: R2 has no spending cap and needs a card; B2 is free for 10 GB without a card and has hard daily caps.
+8. [x] Docker + Render: live at https://cad-viewer.onrender.com (Neon + Backblaze B2). Render CLI installed at `~/.local/bin/render` (`render login`, then `render logs -r <service-id> --tail`, `render deploys list`). Storage is B2, not R2: R2 has no spending cap and needs a card; B2 is free for 10 GB without a card and has hard daily caps.
    - `Dockerfile` at the repo root (build context = repo root): stages `base` (ruby:3.4.11-slim-**bookworm**: Debian bookworm ships OCCT 7.6.3 like Ubuntu 24.04; trixie ships 7.8), `tessellator` (all `libocct-*-dev` + `libtbb-dev`, CMake build), `build` (gems, Rails assets, viewer built with `VITE_API_URL=/ npm run build -- --assetsDir viewer-assets`), final (OCCT runtime libs `libocct-*-7.6`, non-root user, `/usr/local/bin/tessellator`, `/samples/<NIST>.stp`). `.dockerignore` keeps `master.key`, `.env*`, private notes, build outputs out.
    - Rails serves the connected viewer: `ViewerController#index` (root route) sends `web/viewer/index.html` with `no-cache`; hashed assets live in `web/public/viewer-assets/` (1-year cache). Both paths are git-ignored, created only in the image. Same origin, so no CORS for the deployed app.
    - Entrypoint (`web/bin/docker-entrypoint`): `db:prepare` then `db:seed` before `rails server`. Image ENV: `TESSELLATOR_BIN`, `SOLID_QUEUE_IN_PUMA=true`, `PORT=3000` (Render overrides PORT). No Thruster.
@@ -61,7 +61,9 @@ All three pieces are connected: the viewer uploads to Rails, Rails runs the tess
    - `render.yaml` Blueprint: free Docker web service in Oregon, health check `/up`, secrets with `sync: false` (`RAILS_MASTER_KEY`, `DATABASE_URL`, `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`).
    - The B2 bucket needs a CORS rule allowing GET from the Render URL (`glb_url` redirects to a signed B2 URL). B2 free daily allowance: 2,500 downloads (Class B); with $0 caps, downloads stop for the rest of the day after that. Pages demo links to the full app when the repo variable `FULL_APP_URL` is set (`VITE_FULL_APP_URL`).
    - Local production test (no Docker): build the viewer as in the Dockerfile into a scratch copy of `web/`, then `RAILS_ENV=production DATABASE_URL=postgres:///<db> ACTIVE_STORAGE_SERVICE=local FORCE_SSL=false SOLID_QUEUE_IN_PUMA=true PORT=3002 bin/docker-entrypoint ./bin/rails server`. Stop every process (Puma plus the Solid Queue supervisor, dispatcher, worker and scheduler).
-9. [ ] README with architecture and data-model decisions.
+9. [x] README (architecture, data model and tessellation decisions, running locally, deploy, next steps, credits), live links, `docs/screenshot.png`, CI badge. CI: `.github/workflows/ci.yml` (Ubuntu 24.04: build the tessellator, Rails tests against Postgres, RuboCop, Brakeman; viewer lint + build).
+   - Removed generator leftovers: Kamal and Thruster (gems, `config/deploy.yml`, `.kamal/`, `bin/kamal`, `bin/thrust`), `image_processing` (variants are disabled), `web/.github` (GitHub only reads the root `.github`), the viewer's `App.css`, `src/assets/` and `public/icons.svg`.
+   - Deploy gotchas seen: `S3_ENDPOINT` without `https://` fails at boot (`expected :endpoint to be a HTTP or HTTPS endpoint`); `storage.yml` now adds the scheme. A GLB that loads in curl but "Failed to fetch" in the browser means the B2 bucket's CORS rule is missing.
 
 Tessellator next steps: export B-rep edge polylines (for drawing edges as lines).
 

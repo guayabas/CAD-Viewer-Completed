@@ -1,0 +1,71 @@
+# Tests and linters for all three parts, on every push and pull request.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # The C++ tessellator and the Rails app together: the job tests run the real binary on the
+  # committed NIST sample, so the tessellator is built first, at the path Rails expects.
+  rails:
+    runs-on: ubuntu-24.04 # same OCCT 7.6.3 as development and the Docker image
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      RAILS_ENV: test
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install OCCT
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends cmake libtbb-dev occt-misc \
+            libocct-foundation-dev libocct-modeling-data-dev libocct-modeling-algorithms-dev \
+            libocct-ocaf-dev libocct-data-exchange-dev libocct-visualization-dev libocct-draw-dev
+
+      - name: Build the tessellator
+        run: |
+          cmake -S tessellator -B tessellator/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build tessellator/build -j "$(nproc)"
+          tessellator/build/tessellator samples/nist_ctc_01_asme1_ap242-e1.stp /tmp/nist.glb --meta /tmp/nist.json
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          working-directory: web
+          bundler-cache: true
+
+      - name: Lint and security scan
+        working-directory: web
+        run: |
+          bin/rubocop -f github
+          bin/brakeman --no-pager
+
+      - name: Tests
+        working-directory: web
+        run: bin/rails db:test:prepare test
+
+  viewer:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: viewer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: viewer/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build

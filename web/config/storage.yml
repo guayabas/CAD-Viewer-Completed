@@ -32,7 +32,8 @@ local:
 # (the region is the part of the endpoint after "s3.").
 s3:
   service: S3
-  endpoint: <%= ENV["S3_ENDPOINT"] %>
+  # Backblaze shows the endpoint as a bare host; add https:// if it's missing.
+  endpoint: <%= ENV["S3_ENDPOINT"].to_s.strip.then { |e| e.empty? || e.match?(%r{\Ahttps?://}) ? e.presence : "https://#{e}" } %>
   region: <%= ENV["S3_REGION"] %>
   bucket: <%= ENV["S3_BUCKET"] %>
   access_key_id: <%= ENV["S3_ACCESS_KEY_ID"] %>
