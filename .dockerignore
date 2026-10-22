@@ -1,0 +1,35 @@
+# Keep the Docker build context small and free of secrets. The build context is the repo root.
+
+# Secrets and private notes
+web/config/master.key
+web/config/credentials/*.key
+**/.env
+**/.env.*
+!viewer/.env.example
+CLAUDE.local.md
+HANDOFF.md
+
+# Dependencies and build outputs (rebuilt inside the image)
+**/node_modules
+**/dist
+tessellator/build
+web/app/assets/builds/*
+!web/app/assets/builds/.keep
+web/public/assets
+web/public/viewer-assets
+web/viewer
+
+# Runtime files
+web/tmp/*
+web/log/*
+web/storage/*
+web/.bundle
+
+# Only the one sample the seed uses
+samples/*
+!samples/nist_ctc_01_asme1_ap242-e1.stp
+
+# Repo metadata
+.git
+.github
+.vscode

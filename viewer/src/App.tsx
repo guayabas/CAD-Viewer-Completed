@@ -20,6 +20,9 @@ interface LocalModel {
   info: string;
 }
 
+// Demo mode links to the deployed full app when its URL is known at build time.
+const FULL_APP_URL = import.meta.env.VITE_FULL_APP_URL ?? "";
+
 const extensionOf = (name: string) => name.toLowerCase().split(".").pop() ?? "";
 
 export default function App() {
@@ -143,6 +146,15 @@ export default function App() {
           <button className="button" onClick={() => setWireframe((w) => !w)}>
             {wireframe ? "Shaded" : "Wireframe"}
           </button>
+          {!isConnected && FULL_APP_URL && (
+            <a
+              className="button secondary"
+              href={FULL_APP_URL}
+              title="Uploads are meshed on the server and saved in a database. The free server may take about a minute to wake up."
+            >
+              Full app (saves parts) ↗
+            </a>
+          )}
         </div>
 
         <Viewport model={model} wireframe={wireframe} onLoadError={setLoadError} />

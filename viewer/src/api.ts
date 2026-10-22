@@ -1,9 +1,12 @@
 // Client for the Rails JSON API (web/). Connected mode is on when VITE_API_URL is set at build
-// time, e.g. `VITE_API_URL=http://localhost:3000 npm run dev`. Without it the viewer is a
-// static demo that only opens local files.
+// time: `VITE_API_URL=http://localhost:3000 npm run dev` in development, or `VITE_API_URL=/`
+// when Rails serves the viewer itself (same origin, the Docker image). Without it the viewer
+// is a static demo that only opens local files.
 
-export const API_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "");
-export const isConnected = API_URL !== "";
+const RAW_API_URL = import.meta.env.VITE_API_URL ?? "";
+export const isConnected = RAW_API_URL !== "";
+// "/" becomes "", so requests go to "/parts" on the page's own origin.
+export const API_URL = RAW_API_URL.replace(/\/+$/, "");
 
 export type PartStatus = "pending" | "processing" | "ready" | "failed";
 
@@ -52,7 +55,7 @@ function errorFrom(status: number, body: unknown): Error {
   return new Error(data.errors?.join(", ") || data.error || `Server error (HTTP ${status})`);
 }
 
-const unreachable = () => new Error(`Could not reach the server at ${API_URL}`);
+const unreachable = () => new Error(`Could not reach the server at ${API_URL || window.location.origin}`);
 
 async function getJson<T>(path: string): Promise<T> {
   let response: Response;

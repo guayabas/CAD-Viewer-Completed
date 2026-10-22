@@ -8,6 +8,9 @@ Rails.application.routes.draw do
   # JSON API: GET /parts, GET /parts/:id, POST /parts. Responses are always JSON.
   resources :parts, only: %i[index show create], defaults: { format: :json }
 
+  # The connected viewer (React app built into the Docker image), see ViewerController.
+  root "viewer#index"
+
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker

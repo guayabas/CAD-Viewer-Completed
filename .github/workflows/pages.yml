@@ -36,6 +36,9 @@ jobs:
         env:
           # Project sites live at https://<user>.github.io/<repo>/
           VITE_BASE: /${{ github.event.repository.name }}/
+          # Optional "Full app" link to the deployed Rails app. Set it under repo Settings →
+          # Secrets and variables → Actions → Variables → FULL_APP_URL (e.g. the Render URL).
+          VITE_FULL_APP_URL: ${{ vars.FULL_APP_URL }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: viewer/dist

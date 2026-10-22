@@ -16,3 +16,10 @@ test:
 
 production:
   <<: *default
+  workers:
+    # One tessellation at a time: the free Render instance has 512 MB, and OCCT can use a lot
+    # of it on big files.
+    - queues: "*"
+      threads: 1
+      processes: 1
+      polling_interval: 1

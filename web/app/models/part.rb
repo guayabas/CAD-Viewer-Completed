@@ -17,6 +17,7 @@ class Part < ApplicationRecord
   validates :name, presence: true, length: { maximum: 255 }
   validates :file_format, inclusion: { in: FORMATS, message: "must be STEP (.step or .stp)" }
   validate :source_file_is_acceptable
+  validate :within_upload_limits, on: :create
 
   # "bracket.STP" -> "step"; nil if we don't accept that extension.
   def self.format_for(filename)
@@ -24,6 +25,17 @@ class Part < ApplicationRecord
   end
 
   private
+
+  # Keeps the demo inside the storage free tier (config/initializers/uploads.rb).
+  def within_upload_limits
+    limits = Rails.configuration.x.uploads
+    if Part.where(created_at: 24.hours.ago..).count >= limits.daily_limit
+      errors.add(:base, "The demo has reached its daily upload limit. Please try again tomorrow.")
+    elsif source_file.attached? &&
+          ActiveStorage::Blob.sum(:byte_size) + source_file.blob.byte_size > limits.storage_quota
+      errors.add(:base, "The demo's storage is full, so uploads are paused.")
+    end
+  end
 
   def source_file_is_acceptable
     if !source_file.attached?

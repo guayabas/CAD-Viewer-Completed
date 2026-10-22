@@ -8,7 +8,7 @@ class TessellatePartJob < ApplicationJob
     part.update!(status: :processing, error_message: nil)
 
     Dir.mktmpdir("tessellate") do |dir|
-      # source_file.open downloads the file (from disk or R2) to a temp file for the block.
+      # source_file.open downloads the file (from disk or B2) to a temp file for the block.
       part.source_file.open do |source|
         result = Tessellator.new.run(source.path, dir, display_name: part.source_file.filename.to_s)
         save_tessellation(part, result)
